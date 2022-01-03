@@ -6,7 +6,7 @@ import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js'
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js'
 
-let container, stats, mixer, camera, scene, pointLight
+let container, stats, mixer, camera, scene, pointLight, Flamingo, boomBox, facecap
 
 // Canvas
 const canvas = document.querySelector('canvas.webgl')
@@ -45,28 +45,43 @@ function init() {
   scene.background = reflectionCube
 
   //lights
-  const ambient = new THREE.AmbientLight(0xffffff, 1)
-  scene.add(ambient)
+  // const ambient = new THREE.AmbientLight(0xffffff, 1)
+  // scene.add(ambient)
 
-  pointLight = new THREE.PointLight(0xff0000, 1, 100)
-  pointLight.position.set(50, 50, 50)
-  scene.add(pointLight)
+  // pointLight = new THREE.PointLight(0xff0000, 1, 100)
+  // pointLight.position.set(50, 50, 50)
+  // scene.add(pointLight)
+
+  // lights
+  const mainLight = new THREE.PointLight(0xcccccc, 1.5, 250)
+  mainLight.position.y = 60
+  scene.add(mainLight)
+
+  const greenLight = new THREE.PointLight(0x00ff00, 1.5, 1000)
+  greenLight.position.set(300, 50, 0)
+  scene.add(greenLight)
+
+  const redLight = new THREE.PointLight(0xff0000, 1.5, 1000)
+  redLight.position.set(-300, 50, 0)
+  scene.add(redLight)
+
+  const blueLight = new THREE.PointLight(0x7f7fff, 1.5, 1000)
+  blueLight.position.set(0, 50, 300)
+  scene.add(blueLight)
 
   //模型
   const gltfLoader = new GLTFLoader()
   gltfLoader.load('/models/Flamingo.glb', function (gltf) {
-    const Flamingo = gltf.scene
+    Flamingo = gltf.scene
     Flamingo.scale.set(0.05, 0.05, 0.05)
-    Flamingo.position.set(1, 3, 1)
+    Flamingo.position.set(-5, 3, -7)
     scene.add(Flamingo)
   })
 
   gltfLoader.load('/models/BoomBox.glb', function (gltf) {
-    const boomBox = gltf.scene
+    boomBox = gltf.scene
     boomBox.scale.set(200, 200, 200)
-    boomBox.position.set(3, -10, -10)
-    console.log(boomBox)
-
+    boomBox.position.set(1, -10, -10)
     scene.add(boomBox)
   })
 
@@ -76,17 +91,17 @@ function init() {
     .setKTX2Loader(ktx2Loader)
     .setMeshoptDecoder(MeshoptDecoder)
     .load('/models/facecap.glb', gltf => {
-      const mesh = gltf.scene.children[0]
-      mesh.scale.set(20, 20, 20)
-      mesh.position.set(6, 1, -5)
+      facecap = gltf.scene.children[0]
+      facecap.scale.set(20, 20, 20)
+      facecap.position.set(6, 1, -7)
 
-      scene.add(mesh)
+      scene.add(facecap)
 
-      mixer = new THREE.AnimationMixer(mesh)
+      mixer = new THREE.AnimationMixer(facecap)
 
       mixer.clipAction(gltf.animations[0]).play()
 
-      const head = mesh.getObjectByName('mesh_2')
+      const head = facecap.getObjectByName('mesh_2')
       const influences = head.morphTargetInfluences
 
       const gui = new GUI()
@@ -96,6 +111,23 @@ function init() {
         gui.add(influences, value, 0, 1, 0.01).name(key.replace('blendShape1.', '')).listen(influences)
       }
     })
+
+  // Animation loop.
+  const tick = () => {
+    if (Flamingo) {
+      Flamingo.rotation.y += 0.2
+    }
+    if (boomBox) {
+      boomBox.rotation.y += 0.02
+    }
+    if (facecap) {
+      facecap.rotation.y += 0.02
+    }
+
+    renderer.render(scene, camera)
+    requestAnimationFrame(tick)
+  }
+  tick()
 
   // 场景渲染
   renderer.setSize(window.innerWidth, window.innerHeight)
